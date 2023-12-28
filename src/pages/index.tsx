@@ -1,8 +1,10 @@
-import { Inter } from 'next/font/google'
-import { useEffect, useState } from 'react';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { Inter } from "next/font/google";
+import { useEffect, useState } from "react";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
@@ -13,7 +15,8 @@ export default function Home() {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
+    interimTranscript,
   } = useSpeechRecognition();
 
   const handleRecord = () => {
@@ -21,7 +24,7 @@ export default function Home() {
     if (!isRecording) {
       SpeechRecognition.startListening({
         continuous: true,
-        language: 'en-US',
+        language: "en-US",
         interimResults: true,
       });
       startAudioRecording();
@@ -30,52 +33,71 @@ export default function Home() {
       clearTimeout(timer!);
       globalMediaRecorder?.stop();
     }
-  }
+  };
 
   const reset = () => {
     resetTranscript();
     setAudioBlobs(null);
-  }
+  };
 
   const startAudioRecording = () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        const mediaRecorder = new MediaRecorder(stream);
-        setGlobalMediaRecorder(mediaRecorder);
-        mediaRecorder.start();
-        const audioChunks: Blob[] = [];
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const mediaRecorder = new MediaRecorder(stream);
+      setGlobalMediaRecorder(mediaRecorder);
+      mediaRecorder.start();
+      const audioChunks: Blob[] = [];
 
-        mediaRecorder.addEventListener("dataavailable", (event: any) => {
-          audioChunks.push(event.data);
-        });
+      mediaRecorder.addEventListener("dataavailable", (event: any) => {
+        audioChunks.push(event.data);
+      });
 
-        mediaRecorder.addEventListener("stop", () => {
-          const audioBlob = new Blob(audioChunks);
-          setAudioBlobs((prev) => {
-            if (prev) {
-              return [...prev, audioBlob];
-            }
-            return [audioBlob];
-          })
+      mediaRecorder.addEventListener("stop", () => {
+        const audioBlob = new Blob(audioChunks);
+        setAudioBlobs((prev) => {
+          if (prev) {
+            return [...prev, audioBlob];
+          }
+          return [audioBlob];
         });
       });
-  }
+    });
+  };
 
   useEffect(() => {
+    let silenceTimer: NodeJS.Timeout | null = null;
+    let autoRestartTimer: NodeJS.Timeout | null = null;
+
     if (listening) {
-      clearTimeout(timer!);
-      setTimer(
-        setTimeout(() => {
+      // clearTimeout(timer!);
+
+      autoRestartTimer = setTimeout(() => {
+        globalMediaRecorder?.stop();
+        startAudioRecording();
+      }, 30000);
+
+      silenceTimer = setTimeout(() => {
+        if (transcript !== "") {
+          SpeechRecognition.stopListening();
+          clearTimeout(autoRestartTimer!);
           globalMediaRecorder?.stop();
-          startAudioRecording();
-        }, 30000)
-      );
+          setIsRecording(false);
+        }
+      }, 5000);
+
+      // setTimer(silenceTimer);
+
+      return () => {
+        clearTimeout(autoRestartTimer!);
+        clearTimeout(silenceTimer!);
+      };
     }
-  }, [listening, globalMediaRecorder]);
+  }, [interimTranscript, listening, globalMediaRecorder])
 
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
-      alert("Your browser does not support speech recognition software! Try Chrome desktop, maybe?");
+      alert(
+        "Your browser does not support speech recognition software! Try Chrome desktop, maybe?"
+      );
     }
 
     return () => clearTimeout(timer!);
