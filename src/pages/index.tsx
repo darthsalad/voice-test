@@ -1,3 +1,4 @@
+import { MAX_TIMER, PAUSE_TIMER } from "@/utils/constants";
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
 import SpeechRecognition, {
@@ -8,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
   const [audioBlobs, setAudioBlobs] = useState<Blob[] | null>(null);
   const [globalMediaRecorder, setGlobalMediaRecorder] = useState<MediaRecorder | null>(null);
   const {
@@ -30,7 +30,6 @@ export default function Home() {
       startAudioRecording();
     } else {
       SpeechRecognition.stopListening();
-      clearTimeout(timer!);
       globalMediaRecorder?.stop();
     }
   };
@@ -68,23 +67,22 @@ export default function Home() {
     let autoRestartTimer: NodeJS.Timeout | null = null;
 
     if (listening) {
-      // clearTimeout(timer!);
-
       autoRestartTimer = setTimeout(() => {
         globalMediaRecorder?.stop();
         startAudioRecording();
-      }, 30000);
+      }, MAX_TIMER);
 
       silenceTimer = setTimeout(() => {
         if (transcript !== "") {
-          SpeechRecognition.stopListening();
-          clearTimeout(autoRestartTimer!);
-          globalMediaRecorder?.stop();
-          setIsRecording(false);
-        }
-      }, 5000);
+          // SpeechRecognition.stopListening();
+          // clearTimeout(autoRestartTimer!);
+          // globalMediaRecorder?.stop();
+          // setIsRecording(false);
 
-      // setTimer(silenceTimer);
+          globalMediaRecorder?.stop();
+          startAudioRecording();
+        }
+      }, PAUSE_TIMER);
 
       return () => {
         clearTimeout(autoRestartTimer!);
@@ -99,9 +97,7 @@ export default function Home() {
         "Your browser does not support speech recognition software! Try Chrome desktop, maybe?"
       );
     }
-
-    return () => clearTimeout(timer!);
-  }, [timer]);
+  }, []);
 
   return (
     <main

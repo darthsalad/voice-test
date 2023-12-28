@@ -1,9 +1,17 @@
 # Voice Stream Test
 
-### TODO
-- [ ] Convert to file on stream end
-- [ ] Auto end listening stream on long pauses
-  - Send converted transcript as file to server
-  - User resumes listening stream
-  - User stops
-  - Server sends rest converted transcript as file to server
+## Installation
+
+```bash
+  git clone https://github.com/darthsalad/voice-test.git
+  cd voice-test
+
+  npm i # or yarn install
+  npm run dev # or yarn dev
+```
+
+## Timers
+- `PAUSE_TIMER` = **5** seconds *(5000 milliseconds)*
+- `MAX_TIMER` = **30** seconds *(30000 milliseconds)*
+
+Defined in `src/utils/constants.ts`: [here](src/utils/constants.ts)
