@@ -62,24 +62,22 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (listening && transcript !== "") {
+    if (listening) {
       clearTimeout(timer!);
       setTimer(
         setTimeout(() => {
-          SpeechRecognition.stopListening();
-          setIsRecording(false);
-        }, 10000)
+          globalMediaRecorder?.stop();
+          startAudioRecording();
+        }, 30000)
       );
     }
-
-    if (!browserSupportsSpeechRecognition) {
-      alert(
-        "Your browser does not support speech recognition software! Try Chrome desktop, maybe?"
-      );
-    }
-  }, [transcript, listening]);
+  }, [listening, globalMediaRecorder]);
 
   useEffect(() => {
+    if (!browserSupportsSpeechRecognition) {
+      alert("Your browser does not support speech recognition software! Try Chrome desktop, maybe?");
+    }
+
     return () => clearTimeout(timer!);
   }, [timer]);
 
